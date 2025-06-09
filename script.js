@@ -1,6 +1,7 @@
 let game = document.getElementById("game");
 let cvs = game.getContext("2d");
 
+// Зображення
 let bird = new Image();
 let fg = new Image();
 let bg = new Image();
@@ -13,53 +14,83 @@ bg.src = "img/flappy_bird_bg.png";
 pipeUp.src = "img/flappy_bird_pipeUp.png";
 pipeBottom.src = "img/flappy_bird_pipeBottom.png";
 
-let hole = 90;
-let xPos = 10;
-let yPos = 270;
-let grav = 1;
+// Константи
+let hole = 130;
+let xPos = 50;
+let yPos = game.height / 2 - 25;
+let grav = 1.5;
+let jump = 35;
 let score = 0;
-let gameOver = false; // <--- прапорець для уникнення багатьох перезавантажень
+let gameOver = false;
 
+// Рух вгору
 document.addEventListener("keydown", moveUp);
 function moveUp() {
-  yPos -= 30;
+  yPos -= jump;
 }
 
+// Отримати випадкову висоту верхньої труби
+function getRandomTopHeight() {
+  const maxTop = game.height - fg.height - hole - 100; // щоб нижня труба не була надто маленькою
+  return Math.floor(Math.random() * maxTop) + 20;
+}
+
+// Труби
 let pipe = [];
 pipe[0] = {
   x: game.width,
-  y: 0,
+  topHeight: getRandomTopHeight(),
 };
 
 function draw() {
-  if (gameOver) return; // якщо кінець — не малюємо
+  if (gameOver) return;
 
-  cvs.drawImage(bg, 0, 0);
+  // Фон
+  cvs.drawImage(bg, 0, 0, game.width, game.height);
 
   for (let i = 0; i < pipe.length; i++) {
-    cvs.drawImage(pipeUp, pipe[i].x, pipe[i].y);
-    cvs.drawImage(pipeBottom, pipe[i].x, pipe[i].y + pipeUp.height + hole);
+    let pipeX = pipe[i].x;
+    let topHeight = pipe[i].topHeight;
 
-    pipe[i].x--;
+    // Верхня труба (приклеєна до верху)
+    cvs.drawImage(pipeUp, pipeX, 0, pipeUp.width, topHeight);
 
-    if (pipe[i].x === 125) {
+    // Нижня труба (приклеєна до низу)
+    let bottomY = game.height - fg.height;
+    let bottomPipeY = topHeight + hole;
+    let bottomPipeHeight = bottomY - bottomPipeY;
+    cvs.drawImage(
+      pipeBottom,
+      pipeX,
+      bottomY - bottomPipeHeight,
+      pipeBottom.width,
+      bottomPipeHeight
+    );
+
+    // Рух труб
+    pipe[i].x -= 2;
+
+    // Створення нової труби
+    if (pipe[i].x === 200) {
       pipe.push({
         x: game.width,
-        y: Math.floor(Math.random() * pipeUp.height) - pipeUp.height,
+        topHeight: getRandomTopHeight(),
       });
     }
 
+    // Перевірка зіткнення
     if (
-      xPos + bird.width >= pipe[i].x &&
-      xPos <= pipe[i].x + pipeUp.width &&
-      (yPos <= pipe[i].y + pipeUp.height ||
-        yPos + bird.height >= pipe[i].y + pipeUp.height + hole)
+      xPos + bird.width >= pipeX &&
+      xPos <= pipeX + pipeUp.width &&
+      (yPos <= topHeight || yPos + bird.height >= bottomY - bottomPipeHeight)
     ) {
       endGame();
     }
 
-    if (pipe[i].x === 5) {
+    // Рахунок
+    if (pipe[i].x + pipeUp.width < xPos && !pipe[i].scored) {
       score++;
+      pipe[i].scored = true;
     }
   }
 
@@ -68,13 +99,19 @@ function draw() {
     endGame();
   }
 
-  cvs.drawImage(fg, 0, game.height - fg.height);
+  // Земля
+  cvs.drawImage(fg, 0, game.height - fg.height, game.width, fg.height);
+
+  // Пташка
   cvs.drawImage(bird, xPos, yPos);
+
+  // Гравітація
   yPos += grav;
 
+  // Рахунок
   cvs.fillStyle = "#000";
-  cvs.font = "20px sans-serif";
-  cvs.fillText("Рахунок: " + score, 10, game.height - 20);
+  cvs.font = "28px sans-serif";
+  cvs.fillText("Рахунок: " + score, 20, game.height - 30);
 
   requestAnimationFrame(draw);
 }
@@ -82,14 +119,24 @@ function draw() {
 function endGame() {
   if (!gameOver) {
     gameOver = true;
+
+    // Отримуємо рекорд з localStorage
+    let bestScore = localStorage.getItem("bestScore") || 0;
+    bestScore = Math.max(bestScore, score);
+
+    // Зберігаємо оновлений рекорд
+    localStorage.setItem("bestScore", bestScore);
+
     setTimeout(() => {
-      alert("GAME OVER");
+      alert(
+        `GAME OVER\nВаш рахунок: ${score}\nНайкращий рахунок: ${bestScore}`
+      );
       location.reload();
-    }, 100); // затримка щоб уникнути бага з подвійним викликом
+    }, 100);
   }
 }
 
-// Запуск після завантаження всіх картинок
+// Завантаження зображень
 let imagesToLoad = [bird, fg, bg, pipeUp, pipeBottom];
 let imagesLoaded = 0;
 

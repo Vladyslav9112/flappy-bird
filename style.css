@@ -1,0 +1,13 @@
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center; /* Центрує по горизонталі */
+  align-items: center; /* Центрує по вертикалі */
+  background-color: #0000007a; /* (опціонально) колір фону */
+}
+
+canvas#game {
+  display: block;
+  border: 2px solid rgb(0, 0, 0); /* (опціонально) для візуалізації меж */
+}

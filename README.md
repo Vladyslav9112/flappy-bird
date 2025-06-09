@@ -52,5 +52,6 @@ git clone https://github.com/Vladyslav9112/flappy-bird.git
 - Pipes are generated with random heights.
 - Colliding with pipes or the ground = GAME OVER.
 - Score increases with each pipe successfully passed.
+- Calculates the best result
 
 ---
